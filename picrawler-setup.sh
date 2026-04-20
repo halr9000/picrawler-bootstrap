@@ -7,14 +7,14 @@
 # Usage:
 #   ./picrawler-setup.sh                          # interactive, all modules
 #   ./picrawler-setup.sh --headless               # no prompts, all modules
-#   ./picrawler-setup.sh --skip claude,opencode   # skip specific modules
+#   ./picrawler-setup.sh --skip vilib,uv          # skip specific modules
 #   ./picrawler-setup.sh --only nvm,node,pnpm     # run only these modules
 #   ./picrawler-setup.sh --list                   # print available module names
 #   ./picrawler-setup.sh --help
 #
 # Module names:
 #   syspkgs  hwgroups  nvm  node  pnpm  uv  robot-hat  vilib  picrawler
-#   i2samp   claude  opencode  interfaces  profile  demos
+#   i2samp   interfaces  profile  demos
 # =============================================================================
 
 set -euo pipefail
@@ -36,10 +36,7 @@ INSTALL_DIR="${HOME}"
 LOGFILE="/tmp/picrawler-setup-$(date +%Y%m%d-%H%M%S).log"
 
 # ── Module registry (ordered) ─────────────────────────────────────────────────
-# NOTE: 'claude' is excluded by default — Claude Code requires 4 GB RAM minimum
-# and has a known aarch64 detection bug (github.com/anthropics/claude-code/issues/3569).
-# The Pi Zero 2 W has 512 MB; npm installs OOM. Use claude on a Pi 4/5 instead.
-ALL_MODULES=(syspkgs hwgroups nvm node pnpm uv robot-hat vilib picrawler i2samp opencode interfaces profile demos)
+ALL_MODULES=(syspkgs hwgroups nvm node pnpm uv robot-hat vilib picrawler i2samp interfaces profile demos)
 
 # ── Arg parsing ───────────────────────────────────────────────────────────────
 HEADLESS=false
@@ -60,7 +57,7 @@ Options:
 Module names: ${ALL_MODULES[*]}
 
 Examples:
-  $(basename "$0") --skip claude,opencode
+  $(basename "$0") --skip vilib,uv
   $(basename "$0") --only nvm,node,pnpm
   $(basename "$0") --headless --skip i2samp,interfaces
 EOF
@@ -519,66 +516,6 @@ install_i2samp() {
   fi
 }
 
-# ── claude ────────────────────────────────────────────────────────────────────
-# NOT in ALL_MODULES — kept as a callable function for manual use on Pi 4/5.
-# Pi Zero 2 W has 512 MB RAM; Claude Code requires 4 GB minimum and has a
-# known aarch64 detection bug: github.com/anthropics/claude-code/issues/3569
-# Workaround if you want to try anyway (on a higher-RAM Pi):
-#   npm install -g @anthropic-ai/claude-code@0.2.114
-install_claude() {
-  section "Claude Code  [claude]"
-  warn "Claude Code is NOT recommended for Pi Zero 2 W (512 MB RAM; requires 4 GB minimum)"
-  warn "Known aarch64 bug: github.com/anthropics/claude-code/issues/3569"
-  warn "Workaround on Pi 4/5: npm install -g @anthropic-ai/claude-code@0.2.114"
-  if cmd_exists claude; then
-    ok "Claude Code already installed ($(claude --version 2>/dev/null || echo 'unknown version'))"
-    return
-  fi
-  if ask "Attempt Claude Code install anyway (likely to fail on Pi Zero 2 W)?"; then
-    source_nvm
-    if cmd_exists npm; then
-      warn "Trying npm install – this may OOM on Pi Zero 2 W..."
-      run_with_spinner "Installing Claude Code via npm (pinned workaround version)" \
-        npm install -g @anthropic-ai/claude-code@0.2.114
-    else
-      run_with_spinner "Installing Claude Code via native installer" \
-        bash -c "curl -fsSL https://claude.ai/install.sh | sh"
-    fi
-    export PATH="${HOME}/.local/bin:${PATH}"
-    cmd_exists claude && ok "claude installed" || warn "'claude' not in PATH – run: source ~/.bashrc"
-  else
-    warn "Skipping Claude Code"
-  fi
-}
-
-# ── opencode ──────────────────────────────────────────────────────────────────
-install_opencode() {
-  section "opencode  [opencode]"
-  if cmd_exists opencode; then
-    ok "opencode already installed"
-    return
-  fi
-  if ask "Install opencode-ai?"; then
-    source_nvm
-    if cmd_exists npm; then
-      run_with_spinner "Installing opencode-ai via npm" \
-        npm install -g opencode-ai@latest
-      ok "opencode installed"
-    else
-      warn "npm not available – falling back to curl installer"
-      if ask "Install opencode via curl installer instead?"; then
-        run_with_spinner "Installing opencode via curl" \
-          bash -c "curl -fsSL https://opencode.ai/install | bash"
-        ok "opencode installed"
-      else
-        warn "Skipping opencode"
-      fi
-    fi
-  else
-    warn "Skipping opencode"
-  fi
-}
-
 # ── interfaces ────────────────────────────────────────────────────────────────
 install_interfaces() {
   section "Raspberry Pi interfaces (I2C, Camera)  [interfaces]"
@@ -660,7 +597,6 @@ print_status "node"       "node --version"
 print_status "npm"        "npm --version"
 print_status "pnpm"       "pnpm --version"
 
-print_status "opencode"   "opencode --version"
 print_status "robot-hat"  "pip3 show robot_hat 2>/dev/null | grep ^Version"
 print_status "vilib"      "pip3 show vilib 2>/dev/null | grep ^Version"
 print_status "picrawler"  "pip3 show picrawler 2>/dev/null | grep ^Version"
