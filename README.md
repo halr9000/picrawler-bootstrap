@@ -31,14 +31,8 @@ curl -fsSL https://raw.githubusercontent.com/halr9000/picrawler-bootstrap/main/p
 | `picrawler` | SunFounder picrawler library | ✓ |
 | `demos` | [claw9000-demos](https://github.com/halr9000/claw9000-demos) cloned to `~/claw9000-demos` | ✓ |
 | `i2samp` | i2s amplifier / speaker support | ✓ |
-| `opencode` | opencode-ai (npm) | ✓ |
 | `interfaces` | Enables I2C + camera via raspi-config | ✓ |
 | `profile` | Adds NVM/pnpm PATH entries to `~/.bashrc` | ✓ |
-
-> **Claude Code** is intentionally excluded. It requires 4 GB RAM minimum and has a
-> [known aarch64 detection bug](https://github.com/anthropics/claude-code/issues/3569).
-> The Pi Zero 2 W has 512 MB — npm will OOM. Use a Pi 4/5 for Claude Code.
-> Force it anyway with `--only claude`.
 
 ---
 
@@ -55,8 +49,8 @@ curl -fsSL https://raw.githubusercontent.com/halr9000/picrawler-bootstrap/main/p
 Examples:
 
 ```bash
-# Skip slow vilib install and opencode
-./picrawler-setup.sh --skip vilib,opencode
+# Skip two packages
+./picrawler-setup.sh --skip vilib,uv
 
 # Only re-run hardware group setup
 ./picrawler-setup.sh --only hwgroups
